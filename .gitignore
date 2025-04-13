@@ -73,3 +73,4 @@ bertopic_model/
 
 # Files generated during installation
 *.egg-info/
+bertopic_model/
