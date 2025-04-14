@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 from datetime import datetime
 from sentence_transformers import SentenceTransformer
@@ -134,6 +134,49 @@ def topics_over_time_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#############################################
+# New Endpoints for "Analyze" and "Visual"
+#############################################
+
+@app.route("/api/analyze", methods=["GET"])
+def analyze():
+    """
+    /analyze endpoint: triggers a new topic modeling run on the baseline data.
+    Returns a fresh topics summary as JSON.
+    """
+    try:
+        data = load_data(DATA_PATH)
+        documents = combine_fields(data)
+        preprocessed_docs = preprocess_documents(documents)
+        embeddings = generate_embeddings(preprocessed_docs)
+        new_topic_model = BERTopic(verbose=True)
+        new_topics, new_probs = new_topic_model.fit_transform(preprocessed_docs, embeddings)
+        fresh_summary = get_topic_summary(new_topic_model)
+        return jsonify(fresh_summary)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/visual", methods=["GET"])
+def serve_visual():
+    """
+    Returns one of the visualization HTML files from the 'output' directory.
+    Usage example:
+      /api/visual?file=topics_over_time.html
+    """
+    try:
+        # Get 'file' query parameter. Default could be 'topics_over_time.html'
+        filename = request.args.get("file", "topics_over_time.html")
+        
+        # Build the path to the output directory
+        file_path = os.path.join("output", filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({"error": f"File '{filename}' not found in output directory."}), 404
+        
+        return send_from_directory("output", filename)
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 #############################################
 # Main Application Run
