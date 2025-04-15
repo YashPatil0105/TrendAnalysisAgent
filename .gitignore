@@ -5,6 +5,9 @@ __pycache__/
 
 # Virtual environment
 venv/
+#ignore model folder
+bertopic_model
+fine_tuned_model3/
 
 # Distribution / packaging
 .Python
